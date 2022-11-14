@@ -9,7 +9,7 @@ class Particle:
         :param boundary: boundaries (lower and upper value) for all the dimension
         """
         # Position of the particle
-        self.__position = boundary[0]*np.random.random(D)+boundary[1]*np.random.random(D)
+        self.__position = np.random.uniform(boundary[0], boundary[1], D)
         # Velocity of the particle
         self.__velocity = np.random.random(D)
         # Best search point the particle has seen (initially set to the initial position)

@@ -7,15 +7,22 @@ from BenchmarkFunctions import BenchmarkFunction, Rastrigin, Rosenbrock, Sphere,
 
 class PSO:
 
-    def __init__(self, n_particles, D, boundary, init_value):
+    def __init__(self, n_particles, D, boundary, init_value, opt=None):
         # PSO Problem
         self.__fitness = None
         self.__dim = D
         self.__boundary = boundary
         # Hyper parameters
+        self.__opt = opt
+        self.__alpha_min = None
+        self.__alpha_max = None
         self.__alpha = None
         self.__beta = None
+        self.__beta_i = None
+        self.__beta_f = None
         self.__gamma = None
+        self.__gamma_i = None
+        self.__gamma_f = None
         self.__delta = None
         self.__eps = None
         # Population (Swarm) of the PSO
@@ -33,9 +40,28 @@ class PSO:
         :param eps: step for the update of the position given the velocity
         :return:
         """
-        self.__alpha = alpha
-        self.__beta = beta
-        self.__gamma = gamma
+        if len(self.__opt)==2:
+            if self.__opt[0] == 'time_varying_inertia':
+                self.__alpha_min = alpha[0]
+                self.__alpha_max = alpha[1]
+            if self.__opt[1] == 'time_varying_acceleration':
+                self.__beta_i = beta[0]
+                self.__beta_f = beta[1]
+                self.__gamma_i = gamma[0]
+                self.__gamma_f = gamma[1]
+        elif len(self.__opt) == 1:
+            if self.__opt[0] == 'time_varying_inertia':
+                self.__alpha_min = alpha[0]
+                self.__alpha_max = alpha[1]
+            elif self.__opt[0] == 'time_varying_acceleration':
+                self.__beta_i = beta[0]
+                self.__beta_f = beta[1]
+                self.__gamma_i = gamma[0]
+                self.__gamma_f = gamma[1]
+        else:
+            self.__alpha = alpha
+            self.__beta = beta
+            self.__gamma = gamma
         self.__delta = delta
         self.__eps = eps
 
@@ -65,7 +91,7 @@ class PSO:
             idx_informants = np.random.choice(idx_possible, size=n_inf)
             self.__population[i].set_informant(self.__population[idx_informants])
 
-    def update_velocity(self, best_pos):
+    def update_velocity(self, best_pos, n_iter_max, n_iter):
         """
         Update the velocity of each Particle
         :param best_pos: best position seen by any member of the population
@@ -81,6 +107,16 @@ class PSO:
             best_inf = informants[0]
             # Update the velocity for each dimension using random weights
             new_velocity = np.zeros(self.__dim)
+            # Check to use or not optimizers
+            if self.__opt is not None:
+                if 'time_varying_inertia' in self.__opt:
+                    # Update the value of the inertia weight
+                    self.time_varying_inertia_weight(n_iter_max, n_iter)
+
+                if 'time_varying_acceleration' in self.__opt:
+                    # Update the value of the acceleration coefficients
+                    self.time_varying_acc_coefs(n_iter_max, n_iter)
+
             for n in range(self.__dim):
                 b = self.__beta*np.random.random()
                 c = self.__gamma*np.random.random()
@@ -90,6 +126,29 @@ class PSO:
                 social = c*best_inf.getPosition()[n]-c*part.getPosition()[n]
                 new_velocity[n] = inertia + cognitive + social + d*(best_pos[n]-part.getPosition()[n])
             part.setVelocity(new_velocity)
+
+    def time_varying_inertia_weight(self, n_iter_max, n_iter):
+        """
+        Time varying inertia weight from
+        :param n_iter_max: the maximum of the iteration number
+        :param n_iter: current iteration number
+        :return:
+        """
+        self.__alpha = (n_iter_max-n_iter)/n_iter_max*(self.__alpha_max-self.__alpha_min)+self.__alpha_min
+
+
+    def time_varying_acc_coefs(self, n_iter_max, n_iter):
+        """
+        Time varying acceleration coefficients from A. Ratnaweera, S. K. Halgamuge and H. C. Watson,
+        "Self-organizing hierarchical particle swarm optimizer with time-varying acceleration coefficients,"
+        in IEEE Transactions on Evolutionary Computation.
+        :param n_iter_max: the maximum of the iteration number
+        :param n_iter: current iteration number
+        :return:
+        """
+        self.__beta = (self.__beta_i - self.__beta_f)*(n_iter_max - n_iter)/n_iter_max + self.__beta_f
+        self.__gamma = (self.__gamma_i - self.__gamma_f) * (n_iter_max - n_iter) / n_iter_max + self.__gamma_f
+
 
     def optimization_algorithm(self, n_iter, n_informants):
         """
@@ -112,7 +171,7 @@ class PSO:
                 if part.getFitnessValue() < self.__fitness.value(best_position):
                     best_position = part.getPosition()
             # Update velocity
-            self.update_velocity(best_position)
+            self.update_velocity(best_position, n_iter_max = n_iter, n_iter=n)
             # Update Particles' position
             for i in range(len(self.__population)):
                 part = self.__population[i]
@@ -149,7 +208,22 @@ class PSO:
         :return:
         """
         fig, ax = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True)
-        title = r'PSO Algorithm used to optimize {} function (n_population={}, $\alpha={}$, $\beta={}$, $\gamma={}$, $\delta={}$, $\epsilon={}$)'.format(self.__fitness.getName(), len(self.__population), self.__alpha, self.__beta, self.__gamma, self.__delta, self.__eps)
+        if self.__opt is not None :
+            if 'time_varying_inertia' in self.__opt:
+                alpha = r'$\alpha \in$ [{},{}]'.format(self.__alpha_min, self.__alpha_max)
+            else:
+                alpha = r'$\alpha={}$'.format(self.__alpha)
+            if 'time_varying_acceleration' in self.__opt:
+                beta = r'$\beta \in$ [{},{}]'.format(self.__beta_i, self.__beta_f)
+                gamma = r'$\gamma \in$ [{},{}]'.format(self.__gamma_i, self.__gamma_f)
+            else:
+                beta = r'$\beta={}$'.format(self.__beta)
+                gamma = r'$\gamma={}$'.format(self.__gamma)
+        else:
+            alpha = r'$\alpha={}$'.format(self.__alpha)
+            beta = r'$\beta={}$'.format(self.__beta)
+            gamma = r'$\gamma={}$'.format(self.__gamma)
+        title = r'PSO Algorithm used to optimize {} function (n_population={}, {}, {}, {}, $\delta={}$, $\epsilon={}$)'.format(self.__fitness.getName(), len(self.__population), alpha, beta, gamma, self.__delta, self.__eps)
         fig.suptitle(title, fontsize=16, fontweight='bold')
         # Plot the evolution of the best fitness value
         ax[0].set_title('Evolution of the best fitness value')
@@ -176,14 +250,20 @@ if __name__ == '__main__':
     fitness = Rastrigin(n_dim, boundary)
 
     # HYPER-PARAMETERS
-    eps = 1.0    # step for the update of the position given the velocity
-    alpha = 1  # weight for the previous velocity (inertia component)
-    beta = 3   # weight for the cognitive component
-    gamma = 0.1  # weight for the social component
-    delta = 0.8  # weight for the best position seen by all the population
+    eps = 1.0               # step for the update of the position given the velocity
+    alpha = 1.0             # weight for the previous velocity (inertia component)
+    beta = 2.0              # weight for the cognitive component
+    gamma = 1.5             # weight for the social component
+    delta = 0.5             # weight for the best position seen by all the population
+
+    # TIME VARYING HYPER-PARAMETERS
+    alpha_opt = [0.4, 0.9]  # For time varying inertia weight (TVIW)
+    beta_opt = [2.5, 0.5]   # For time varying acceleration coefficient (TVAC)
+    gamma_opt = [0.5, 2.5]  # For time varying acceleration coefficient(TVAC)
+
 
     # PSO Algorithm
-    pso = PSO(n_particles=150, D=n_dim, boundary=boundary, init_value=100)
-    pso.set_hyperparameters(alpha, beta, gamma, delta, eps)
+    pso = PSO(n_particles=75, D=n_dim, boundary=boundary, init_value=100, opt=['time_varying_inertia', 'time_varying_acceleration'])
+    pso.set_hyperparameters(alpha_opt, beta_opt, gamma_opt, delta, eps)
     pso.set_fitness(fitness)
-    pso.optimization_algorithm(15000, 'random')
+    pso.optimization_algorithm(10000, 'random')
