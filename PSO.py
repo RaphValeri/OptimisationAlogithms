@@ -53,11 +53,16 @@ class PSO:
             if self.__opt[0] == 'time_varying_inertia':
                 self.__alpha_min = alpha[0]
                 self.__alpha_max = alpha[1]
-            elif self.__opt[0] == 'time_varying_acceleration':
+            else:
+                self.__alpha = alpha
+            if self.__opt[0] == 'time_varying_acceleration':
                 self.__beta_i = beta[0]
                 self.__beta_f = beta[1]
                 self.__gamma_i = gamma[0]
                 self.__gamma_f = gamma[1]
+            else:
+                self.__beta = beta
+                self.__gamma = gamma
         else:
             self.__alpha = alpha
             self.__beta = beta
@@ -247,14 +252,14 @@ if __name__ == '__main__':
     # PROBLEM
     n_dim = 10
     boundary = [-5.12, 5.12]
-    fitness = Rastrigin(n_dim, boundary)
+    fitness = Rosenbrock(n_dim, boundary)
 
     # HYPER-PARAMETERS
     eps = 1.0               # step for the update of the position given the velocity
     alpha = 1.0             # weight for the previous velocity (inertia component)
-    beta = 2.0              # weight for the cognitive component
-    gamma = 1.5             # weight for the social component
-    delta = 0.5             # weight for the best position seen by all the population
+    beta = 1.8              # weight for the cognitive component
+    gamma = 1.8             # weight for the social component
+    delta = 0.4             # weight for the best position seen by all the population
 
     # TIME VARYING HYPER-PARAMETERS
     alpha_opt = [0.4, 0.9]  # For time varying inertia weight (TVIW)
@@ -266,4 +271,4 @@ if __name__ == '__main__':
     pso = PSO(n_particles=75, D=n_dim, boundary=boundary, init_value=100, opt=['time_varying_inertia', 'time_varying_acceleration'])
     pso.set_hyperparameters(alpha_opt, beta_opt, gamma_opt, delta, eps)
     pso.set_fitness(fitness)
-    pso.optimization_algorithm(10000, 'random')
+    pso.optimization_algorithm(1990, 'random')
