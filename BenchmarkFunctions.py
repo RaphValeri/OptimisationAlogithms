@@ -171,3 +171,34 @@ class Schwefel(BenchmarkFunction):
             noise = 0
         cnt = (x**2 + (x+y)**2)
         return cnt*(1+0.4*noise)
+
+class Griewank(BenchmarkFunction):
+    def __init__(self, n_dim, boundary, noise=True):
+        super().__init__(n_dim, boundary, 'Griewank')
+        self.__n_dim = n_dim
+        self.__boundary = boundary
+        self.__noise = noise
+
+    def value(self, x):
+        if self.__noise:
+            noise = 0.3*np.abs(np.random.randn())
+        else:
+            noise = 0
+        z = (1+noise)*x
+        cnt = 0
+        prod = 1
+        for i in range(0, self.__n_dim):
+            cnt += z[i]**2/4000
+            prod *= np.cos(z[i]/np.sqrt(i+1))
+        return cnt - prod + 1
+
+    def value_2D(self, x, y):
+        if self.__noise:
+            noise = np.abs(np.random.randn())
+        else:
+            noise = 0
+        x = x*(1+0.3*noise)
+        y = y*(1+0.3*noise)
+        cnt = (x**2 + y**2)/4000
+        prod = np.cos(x/1) + np.cos(y/2)
+        return cnt - prod + 1

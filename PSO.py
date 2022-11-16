@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 import Particle
-from BenchmarkFunctions import BenchmarkFunction, Rastrigin, Rosenbrock, Sphere, Schwefel
+from BenchmarkFunctions import BenchmarkFunction, Rastrigin, Rosenbrock, Sphere, Schwefel, Griewank
 
 
 class PSO:
@@ -188,7 +188,7 @@ class PSO:
                     elif new_pos[j] > self.__boundary[1]:
                         new_pos[j] = self.__boundary[1]
                 part.setPosition(new_pos)
-            if ((n_iter >= 2000) and ((n % 500) == 0 or n == n_iter-1)) or ((n_iter < 2000) and ((n % 30) == 0 or n == n_iter-1)):
+            if ((n_iter >= 2000) and ((n % 500) == 0 or n == n_iter-1)) or ((n_iter < 2000) and ((n % 5) == 0 or n == n_iter-1)):
                 print('---'*10)
                 print('Iteration {} - Best value = {} for position = {}'.format(n, self.__fitness.value(best_position), best_position))
                 # Update the history
@@ -251,8 +251,8 @@ class PSO:
 if __name__ == '__main__':
     # PROBLEM
     n_dim = 10
-    boundary = [-5.12, 5.12]
-    fitness = Rosenbrock(n_dim, boundary)
+    boundary = [0, 600]
+    fitness = Griewank(n_dim, boundary, noise=True)
 
     # HYPER-PARAMETERS
     eps = 1.0               # step for the update of the position given the velocity
@@ -266,9 +266,8 @@ if __name__ == '__main__':
     beta_opt = [2.5, 0.5]   # For time varying acceleration coefficient (TVAC)
     gamma_opt = [0.5, 2.5]  # For time varying acceleration coefficient(TVAC)
 
-
     # PSO Algorithm
     pso = PSO(n_particles=75, D=n_dim, boundary=boundary, init_value=100, opt=['time_varying_inertia', 'time_varying_acceleration'])
     pso.set_hyperparameters(alpha_opt, beta_opt, gamma_opt, delta, eps)
     pso.set_fitness(fitness)
-    pso.optimization_algorithm(1990, 'random')
+    pso.optimization_algorithm(100, 'random')
