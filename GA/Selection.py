@@ -65,7 +65,7 @@ def random_selection(A,number, fitness = None):
     """
     pop_size = A.shape[1]
     rnd_index = np.random.randint(0, pop_size, number)
-    return A[:, rnd_index]
+    return A[:, rnd_index], rnd_index
 
 def tournament_selection(A,number, tournament_size=3, fitness = None):
     """

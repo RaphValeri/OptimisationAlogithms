@@ -27,6 +27,21 @@ def shrink_mutation(X, mutation_rate = 0):
     mutated = X + bin_factor*adder
     return mutated
 
+def random_mutation(X, mutation_rate = 0):
+    """
+    muation of X by gaussian shrink
+    :param X: indiv / pop
+    :return:s shrinked mutated X
+    """
+    nb_points = X.shape[0]
+    nb_indiv = X.shape[1]
+    choices = np.array([0,1])
+    weights = np.array([1-mutation_rate, mutation_rate ])
+    bin_factor = np.random.choice(choices, size = X.shape, p = weights)
+    random_mutations = np.random.uniform(np.min(X), np.max(X), X.shape)
+    mutated = (1-bin_factor)*X + bin_factor*random_mutations
+    return mutated
+
 def cmaes_mutation(X, cmaes_param, idx):
     n = X.shape[0]
     lamb = X.shape[1]
@@ -73,7 +88,8 @@ def cmaes_mutation(X, cmaes_param, idx):
 class Mutation:
     def __init__(self, name="shrink", rate = 0):
         self.possible_mutations = {"shrink": shrink_mutation,
-                                   "cmaes" : cmaes_mutation}
+                                   "cmaes" : cmaes_mutation,
+                                   "random": random_mutation}
         if name not in self.possible_mutations.keys():
             print("Warning, mutation name is not recognized")
             print("Admissible mutation names are : 'shrink', 'cmaes'")
