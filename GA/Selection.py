@@ -86,13 +86,44 @@ def tournament_selection(A,number, tournament_size=3, fitness = None):
     selected_fit_eval = np.sort(fitness(selected))
     return selected, winner_index
 
+def tournament_selection2(A,number, tournament_size=3, proba = 0.9, fitness = None):
+    """
+    selecting individuals by tournament
+    :param A: all individuals
+    :param number: number of individuals to select (int)
+    :return: selected individuals in 2D array
+    """
+    nb_genes = A.shape[0]
+    pop_size = A.shape[1]
+    pop = copy.deepcopy(A)
+    selected = np.zeros((nb_genes, number))
+    winner_index = np.zeros(number)
+    for i in range(number):
+        index = np.random.choice(pop_size, size = tournament_size, replace = False)
+        tournament = pop[:, index]
+        #print(tournament)
+        fit_eval = np.around(fitness(tournament),4)
+        #print(index, index.shape)
+        dic_eval = {fit_eval[i] : index[i] for i in range(tournament_size)}
+        tournament = tournament[:, fit_eval.argsort()]
+        p_weights = np.array([proba*(1-proba)**i for i in range(tournament_size)])
+        p_weights[-1] = 1 - np.sum(p_weights[:-1])
+        selected_index = np.random.choice(tournament_size, p = p_weights)
+        winner = tournament[:, selected_index]
+        selected[:, i] = winner
+        #print(winner)
+        fit_winner = round(fitness(winner[:,None])[0], 4)
+        #print(dic_eval)
+        winner_index[i]= int(dic_eval[fit_winner])
+    return selected, winner_index
+
 
 class Selection:
-    def __init__(self, number, name="wheel", fitness_func=None,tournament_size = None):
+    def __init__(self, number, name="wheel", fitness_func=None,tournament_size = None, proba = None):
         self.possible_selections = {"random" : random_selection,
                                    "naive":naive_selection,
                                    "wheel":wheel_selection,
-                                   "tournament":tournament_selection}
+                                   "tournament":tournament_selection2}
         if name not in self.possible_selections.keys():
             print("Warning, selection name is not recognized")
             print("Admissible selection names are : 'random', 'naive', 'wheel'")
@@ -103,10 +134,12 @@ class Selection:
         self.number = number
         self.fitness_func = fitness_func
         self.tournament_size = tournament_size
+        self.proba = proba
         if self.name == "tournament":
-            self.function = lambda A,number,fitness : tournament_selection(A,
+            self.function = lambda A,number , fitness : tournament_selection2(A,
                                                                            number,
                                                                            tournament_size=self.tournament_size,
+                                                                           proba = self.proba,
                                                                            fitness = fitness)
         else:
             self.function = self.possible_selections[self.name]

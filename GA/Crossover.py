@@ -34,7 +34,7 @@ def k_points_crossover(x,y, alpha = 2, crossover_rate = 1):
     crossover_event = (np.random.uniform(0, 1) < crossover_rate)
     if crossover_event:
         nb_points = x.shape[0]
-        k_points = np.random.choice(nb_points, size = alpha, replace = False)
+        k_points = np.random.choice(nb_points-1, size = alpha, replace = False)
         k_points = np.sort(k_points)
         genes_fact = np.zeros((nb_points,1))
         if alpha==1:
@@ -42,10 +42,19 @@ def k_points_crossover(x,y, alpha = 2, crossover_rate = 1):
             child1 = genes_fact * x + (1 - genes_fact) * y
             child2 = genes_fact * y + (1 - genes_fact) * x
             return np.hstack((child1, child2))
-
-        for i in range(0, alpha-1):
-            if i%2==0:
-                genes_fact[k_points[i]:k_points[i+1]] = 1
+        elif alpha%2 == 0:
+            for i in range(alpha):
+                if i%2==0:
+                    genes_fact[k_points[i]+1:k_points[i+1]+1] = 1
+                if (i+1)==alpha-1:
+                    break
+        else:
+            for i in range(alpha):
+                if i==alpha-1:
+                    genes_fact[k_points[i]+1:] = 1
+                    break
+                if i%2==0:
+                    genes_fact[k_points[i]+1:k_points[i+1]+1] = 1
         child1 = genes_fact*x + (1-genes_fact)*y
         child2 = genes_fact*y + (1-genes_fact)*x
     else :
@@ -117,8 +126,6 @@ def crossing(S, fitness, crossover = blx_alpha_crossover, child_nb=100, alpha=0.
         children = crossover(par1,par2, alpha=alpha, crossover_rate= crossover_rate)
         A = np.hstack((A, child))
     A = A[:,1:]
-    #adding best parents
-    #A = np.hstack((A, S[:,:(elites + 1)]))
     cross_score = fitness(A)
     sorted_A = A[:, (cross_score).argsort()]
     return sorted_A

@@ -50,7 +50,7 @@ def schwefel(x):
     return S
 
 def griewank(x):
-    S = 1 + np.sum((x**2)/4000, axis =0) - np.prod((np.array([[1/np.sqrt(i)] for i in range(1, x.shape[0]+1)]))*np.cos(x), axis = 0)
+    S = 1 + np.sum((x**2), axis =0)/4000 - np.prod((np.array([[1/np.sqrt(i)] for i in range(1, x.shape[0]+1)]))*np.cos(x), axis = 0)
     return S
 
 class Fitness:

@@ -12,7 +12,7 @@ def sum_mult(A):
         S += A[:,i][:,None]@A[:,i][:, None].T
     return S
 
-def shrink_mutation(X, mutation_rate = 0):
+def shrink_mutation(X, width, mutation_rate = 0):
     """
     muation of X by gaussian shrink
     :param X: indiv / pop
@@ -23,26 +23,16 @@ def shrink_mutation(X, mutation_rate = 0):
     choices = np.array([0,1])
     weights = np.array([1-mutation_rate, mutation_rate ])
     bin_factor = np.random.choice(choices, size = X.shape, p = weights)
-    adder = np.random.normal(loc = 0, scale = np.max(abs(X)), size=X.shape)
+    if width == 0:
+        adder = np.random.normal(loc = 0, scale = np.max(abs(X)), size=X.shape)
+    else :
+        adder = np.random.normal(loc=0, scale=np.max(abs(X)), size=X.shape)
+        #adder = np.random.multivariate_normal(np.zeros(nb_points), X@X.T, nb_indiv).T
     mutated = X + bin_factor*adder
     return mutated
 
-def random_mutation(X, mutation_rate = 0):
-    """
-    muation of X by gaussian shrink
-    :param X: indiv / pop
-    :return:s shrinked mutated X
-    """
-    nb_points = X.shape[0]
-    nb_indiv = X.shape[1]
-    choices = np.array([0,1])
-    weights = np.array([1-mutation_rate, mutation_rate ])
-    bin_factor = np.random.choice(choices, size = X.shape, p = weights)
-    random_mutations = np.random.uniform(np.min(X), np.max(X), X.shape)
-    mutated = (1-bin_factor)*X + bin_factor*random_mutations
-    return mutated
-
 def cmaes_mutation(X, cmaes_param, idx):
+    idx = idx.astype('int')
     n = X.shape[0]
     lamb = X.shape[1]
     mu = len(idx)
@@ -86,10 +76,10 @@ def cmaes_mutation(X, cmaes_param, idx):
     return cmaes_param["theta"]
 
 class Mutation:
-    def __init__(self, name="shrink", rate = 0):
+    def __init__(self, name="shrink", initial_std_width = 1, rate = 0):
         self.possible_mutations = {"shrink": shrink_mutation,
                                    "cmaes" : cmaes_mutation,
-                                   "random": random_mutation}
+                                   }
         if name not in self.possible_mutations.keys():
             print("Warning, mutation name is not recognized")
             print("Admissible mutation names are : 'shrink', 'cmaes'")
@@ -99,16 +89,13 @@ class Mutation:
             self.name = name
         self.rate = rate
         self.cmaes_param = {}
-        if self.name == "cmaes":
-            self.function = lambda X, idx : cmaes_mutation(X, self.cmaes_param, idx)
-        else:
-            self.function = self.possible_mutations[self.name]
+        self.initial_std_width = initial_std_width
 
-    def apply(self, population, idx = None):
+    def apply(self, population, width = 1, idx = None):
         if self.name == "cmaes":
-            return self.function(population, idx)
+            return cmaes_mutation(population, self.cmaes_param,  idx)
         else :
-            return self.function(population, self.rate)
+            return shrink_mutation(population, width, self.rate)
 
     def reinitialize_maes(self):
         self.cmaes_param = {}
