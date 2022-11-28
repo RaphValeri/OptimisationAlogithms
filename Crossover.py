@@ -1,5 +1,5 @@
 import numpy as np
-from Fitness import Fitness
+#from Fitness import Fitness
 from abc import ABC, abstractmethod
 
 def uniform_crossover(x,y, alpha = 0.5, crossover_rate = 1):

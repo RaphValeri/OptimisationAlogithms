@@ -1,5 +1,5 @@
 import numpy as np
-from Fitness import Fitness
+#from Fitness import Fitness
 import copy
 
 def wheel(A, fitness):
