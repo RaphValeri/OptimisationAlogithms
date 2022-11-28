@@ -31,6 +31,23 @@ def shrink_mutation(X, width, mutation_rate = 0):
     mutated = X + bin_factor*adder
     return mutated
 
+def uniform_mutation(X, width, mutation_rate = 0):
+    """
+    random uniform mutation in the boundaries of [-width, width]
+    :param X: indiv / pop
+    :return:s shrinked mutated X
+    """
+    bound_min = - abs(width)
+    bound_max = abs(width)
+    nb_points = X.shape[0]
+    nb_indiv = X.shape[1]
+    choices = np.array([0,1])
+    weights = np.array([1-mutation_rate, mutation_rate ])
+    bin_factor = np.random.choice(choices, size = X.shape, p = weights)
+    mutated = np.random.uniform(bound_min, bound_max, size=X.shape)
+    final_child = (1-bin_factor)*X + bin_factor*adder
+    return final_child
+
 def cmaes_mutation(X, cmaes_param, idx):
     idx = idx.astype('int')
     n = X.shape[0]
@@ -78,6 +95,7 @@ def cmaes_mutation(X, cmaes_param, idx):
 class Mutation:
     def __init__(self, name="shrink", initial_std_width = 1, rate = 0):
         self.possible_mutations = {"shrink": shrink_mutation,
+                                   "uniform": uniform_mutation,
                                    "cmaes" : cmaes_mutation,
                                    }
         if name not in self.possible_mutations.keys():

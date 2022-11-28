@@ -50,7 +50,12 @@ def schwefel(x):
     return S
 
 def griewank(x):
-    S = 1 + np.sum((x**2), axis =0)/4000 - np.prod((np.array([[1/np.sqrt(i)] for i in range(1, x.shape[0]+1)]))*np.cos(x), axis = 0)
+    S = 1 + np.sum((x**2), axis =0)/4000 - np.prod(np.cos(np.array([[1/np.sqrt(i)] for i in range(1, x.shape[0]+1)])*x), axis = 0)
+    return S
+
+def step(x):
+    #S = np.sum(abs(x.astype('int')), axis =0)
+    S = np.min(abs(x), axis=0)
     return S
 
 class Fitness:
@@ -61,6 +66,7 @@ class Fitness:
                                "rosenbrock":rosenbrock,
                                "schwefel": schwefel,
                                "griewank":griewank,
+                               "step":step
                                }
         if name not in self.possible_names.keys() :
             print("Warning, fitness name is not recognized")

@@ -69,7 +69,7 @@ class GA:
         if width == 0 and name == "shrink":
             print("width = 0 -> Gaussian std is equal to max |pop|")
 
-    def simulation(self,  nb_gen = 500, precision = 4, printer = True):
+    def simulation(self,  nb_gen = 500, precision = 4, printer = True, thresh_reset = 150):
         parents = np.random.uniform(self.bound_min, self.bound_max, (self.nb_genes, self.initial_pop_size))
         if printer:
             print("Gen 0 best minimization = {}".format(round(self.fitness.evaluate(parents).min(), precision)))
@@ -86,7 +86,7 @@ class GA:
             all_scores = []
             for i in range(1, nb_gen+1):
                 selected_parents, idx = self.selection.apply(parents)
-                #selected_parents = elitism(parents, selected_parents, self.fitness.evaluate, number=1)
+                selected_parents = elitism(parents, selected_parents, self.fitness.evaluate, number=1)
                 # all crossed children
                 children = self.crossover.apply(selected_parents)
                 # mutation
@@ -100,15 +100,15 @@ class GA:
                     all_scores.append(score)
                     print("Gen {} best minimization = {}".format(i, score))
                 parents = children
-                # if len(all_scores)>3 and abs(all_scores[-1] - all_scores[-3])<(10**(-precision)) and i<nb_gen-1:
-                #     all_width[i+1] *= 5
+                if (i%(nb_gen//4) == 2 and self.fitness.evaluate(parents).min()>thresh_reset):
+                    parents = np.random.uniform(3*self.bound_min/4, 3*self.bound_max/4, parents.shape)
         return children, children[:, np.argmin(self.fitness.evaluate(children))]
 
-    def multiple_runs(self, nb_runs=10, nb_gen=1000, precision=4,printer=False):
+    def multiple_runs(self, nb_runs=10, nb_gen=1000, precision=4,printer=False, thresh_reset = 150):
         minimal_val = np.zeros(nb_runs)
         results = np.zeros((self.nb_genes, nb_runs))
         for i in range(nb_runs):
-            children, best_child = self.simulation(nb_gen = nb_gen, precision = precision, printer = printer)
+            children, best_child = self.simulation(nb_gen = nb_gen, precision = precision, printer = printer, thresh_reset = thresh_reset)
             fit_eval = np.around(self.fitness.evaluate(best_child[:,None]),precision)
             minimal_val[i] = fit_eval
             results[:, i] = best_child
@@ -122,18 +122,19 @@ class GA:
         print("Average fitness = ", avg_val)
         print("Average fitness Std = ", std_val)
         print("Best individual overall = ", np.around(best_overall, precision))
+        print("Best fitness overall = ", np.around(np.min(self.fitness.evaluate(results)), precision))
         return best_overall, results, avg_val, std_val
 
 
 if __name__ == "__main__":
-    experience = GA(nb_genes=10, initial_pop_size=1000, bound_min=-20, bound_max=20, fitness_name="rosenbrock", elites = 25, cull = 50)
-    experience.selection_init(number=90, name="wheel", tournament_size =10, proba = 0.9)
-    experience.crossover_init(child_nb = 1000, name="uniform", alpha=0.7, rate = 0.4)
-    experience.mutation_init(name="shrink", width = 0, rate=0.15)
-    #best, results, avg, std = experience.multiple_runs(nb_runs=3, nb_gen=500, precision=4, printer=1)
+    experience = GA(nb_genes=10, initial_pop_size=40, bound_min=-600, bound_max=600, fitness_name="rastrigin", elites = 5, cull = 5)
+    experience.selection_init(number=8, name="tournament", tournament_size =10, proba = 0.9)
+    experience.crossover_init(child_nb = 40, name="k_points", alpha=1, rate = 0.7)
+    experience.mutation_init(name="shrink", width = 20, rate=0.05)
+    best, results, avg, std = experience.multiple_runs(nb_runs=10, nb_gen=3000, precision=6, printer=1)
 
-    exp2 = GA(nb_genes=10, initial_pop_size=2000, bound_min=-100, bound_max=100, fitness_name="rosenbrock", elites = 0, cull = 0)
+    exp2 = GA(nb_genes=10, initial_pop_size=2000, bound_min=-100, bound_max=100, fitness_name="rosenbrock")
     exp2.selection_init(number=100, name="naive", tournament_size=10, proba=1)
     exp2.mutation_init(name="cmaes")
-    best, results, avg, std = exp2.multiple_runs(nb_runs=3, nb_gen=250, precision=4, printer=1)
+    #best, results, avg, std = exp2.multiple_runs(nb_runs=3, nb_gen=250, precision=4, printer=1)
 
