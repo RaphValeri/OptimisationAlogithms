@@ -276,7 +276,7 @@ def repeted_test(fitness, n_dim, boundary, n_test, n_particles, opt, alpha, beta
         history_iter.append(history_k['iteration'])
         history_fit.append(history_k['fitness_value'])
         history_pos.append(history_k['position'])
-        # Add the inforamtion of the best fitness
+        # Add the information of the best fitness
         best_fit.append(fit_min)
         best_iter.append(iter_min)
         best_pos.append(pos_value)
@@ -289,10 +289,14 @@ def repeted_test(fitness, n_dim, boundary, n_test, n_particles, opt, alpha, beta
 
 
 def plot_hyperparameter_investigation(ax, history_best_fit, history_best_it, xlabel):
-    #fig, ax = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True)
-    #title = 'Hyperparameter {} investigation'.format(xlabel)
-    #fig.suptitle(title, fontsize=16, fontweight='bold')
-    # Plot the evolution of the best fitness value
+    """
+    Plot of the hyperparameter investigation (boxplot of ten repeated run)
+    :param ax: axes (instance of Matplotlib.Axes)
+    :param history_best_fit: dictionary with the best fitness of each run related to the value of the hyperparamter
+    :param history_best_it: dictionary with the minimum iteration to converge for each run related to the value of the hyperparamter
+    :param xlabel: label to display in the x-axis (also name of the investigated hyperparameter)
+    :return: plot
+    """
     ax.set_title('Best fitness value related to the {} value'.format(xlabel))
     ax.boxplot([history_best_fit[key] for key in history_best_fit.keys()], showfliers=False)
     ax.set_xticks(np.arange(1, len(history_best_fit.keys()) + 1))
@@ -300,14 +304,7 @@ def plot_hyperparameter_investigation(ax, history_best_fit, history_best_it, xla
     ax.set_xlabel(xlabel)
     ax.set_ylabel('Best fitness value (lower is the best))')
     ax.grid()
-    #Plot the number of the iteration needed to reach the best fitness value
-    # ax[1].set_title('Number of iteration to reach the best fitness value')
-    # ax[1].boxplot([history_best_it[key] for key in history_best_it.keys()], showfliers=False)
-    # ax[1].set_xticks(np.arange(1, len(history_best_it.keys()) + 1))
-    # ax[1].set_xticklabels([key for key in history_best_it.keys()])
-    # ax[1].set_xlabel(xlabel)
-    # ax[1].set_ylabel('Number of iteration')
-    # ax[1].grid()
+
 
 
 
@@ -319,7 +316,7 @@ if __name__ == '__main__':
 
     # HYPER-PARAMETERS
     eps = 0.8               # step for the update of the position given the velocity
-    #alpha = 1.0            # weight for the previous velocity (inertia component)
+    alpha = 1.0            # weight for the previous velocity (inertia component)
     beta = 1.8              # weight for the cognitive component
     gamma = 1.8             # weight for the social component
     delta = 0.6             # weight for the best position seen by all the population
@@ -330,13 +327,15 @@ if __name__ == '__main__':
     gamma_opt = [0.5, 2.5]  # For time varying acceleration coefficient(TVAC)
 
     # PSO Algorithm
-    # pso = PSO(n_particles=40, D=n_dim, boundary=boundary, init_value=100, opt=['time_varying_inertia', 'time_varying_acceleration'])
-    # pso.set_hyperparameters(alpha_opt, beta_opt, gamma_opt, delta, eps)
-    # pso.set_fitness(fitness)
+    pso = PSO(n_particles=40, D=n_dim, boundary=boundary, init_value=100, opt=['time_varying_inertia', 'time_varying_acceleration'])
+    pso.set_hyperparameters(alpha_opt, beta_opt, gamma_opt, delta, eps)
+    pso.set_fitness(fitness)
 
-    history_iter, history_fit, history_pos, best_fit, best_iter, best_pos = repeted_test(fitness, n_dim, boundary, n_test=10, n_particles=40, opt=['time_varying_inertia', 'time_varying_acceleration'], alpha=alpha_opt, beta=beta_opt, gamma=gamma_opt, delta=delta, eps=eps, iter_max=3000, n_informants=5)
+    #history_iter, history_fit, history_pos, best_fit, best_iter, best_pos = repeted_test(fitness, n_dim, boundary, n_test=10, n_particles=40, opt=['time_varying_inertia', 'time_varying_acceleration'], alpha=alpha_opt, beta=beta_opt, gamma=gamma_opt, delta=delta, eps=eps, iter_max=3000, n_informants=5)
 
-    # pso.optimization_algorithm(2000, 'random')
+    pso.optimization_algorithm(2000, 'random')
+
+    # Hyperparameters investigations
 
     # inf_values = [5, 10, 15, 20, 25, 30, 'random']
     # alpha_values = [0.7, 0.9, 1, 1.1]

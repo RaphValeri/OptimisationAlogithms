@@ -27,3 +27,6 @@ Other options are available:
 
 If you want to modify the values of the hyperparameters, you need to change their values at the beginning of the
 main.py script (first, the values for the PSO are set and then the ones of GA)
+
+Note that you can visualize the swarm of a PSO algorithm in a continuous contour plot when the dimension is 2. YOu can try to
+replace the value of the field 'dimension' in the main.py file by two.

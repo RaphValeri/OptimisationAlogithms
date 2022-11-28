@@ -61,7 +61,7 @@ class BenchmarkFunction(ABC):
         plt.xlabel('x1')
         plt.ylabel('x2')
         plt.legend()
-        plt.show()
+        #plt.show()
         plt.pause(0.5)
 
     def plot_3D(self, x, population):
