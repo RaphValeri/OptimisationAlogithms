@@ -55,12 +55,15 @@ def main():
     # Instantiate the fitness function
     boundary, fitness = set_fitness(args)
     if args.pso:
-        pso = PSO.PSO(n_particles=n_pop, D=dimension, boundary=boundary, init_value=1000, opt=opt)
-        pso.set_hyperparameters(alpha, beta, gamma, delta, epsilon)
-        pso.set_fitness(fitness)
-        pso.optimization_algorithm(n_iter=n_iter, n_informants=n_inf)
-        if args.plot:
-            pso.result_curve()
+        if args.k_test:
+            PSO.repeted_test(fitness, dimension, boundary, args.k_test, n_pop, opt, alpha, beta, gamma, delta, epsilon, n_iter, n_inf)
+        else:
+            pso = PSO.PSO(n_particles=n_pop, D=dimension, boundary=boundary, init_value=1000, opt=opt)
+            pso.set_hyperparameters(alpha, beta, gamma, delta, epsilon)
+            pso.set_fitness(fitness)
+            pso.optimization_algorithm(n_iter=n_iter, n_informants=n_inf)
+            if args.plot:
+                pso.result_curve()
 
 
 def set_fitness(args):
