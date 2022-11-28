@@ -1,11 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from Fitness import Fitness
+#from Fitness import Fitness
+from BenchmarkFunctions import Sphere, Rastrigin, Rosenbrock, Schwefel, Griewank
 from Selection import Selection
 from Crossover import Crossover
 from Mutation import Mutation
 from scipy.linalg import sqrtm
 import copy
+
 
 def elitism(prev_gen, new_gen, fitness_func, number = 1, option = "exclude" ):
     """
@@ -43,6 +45,19 @@ def culling(A, fitness_func, number = 1):
     new_pop = pop[:, :(-number)]
     return new_pop
 
+def Fitness(name = "sphere", n_dim = 10, boundary = [-10, 10]):
+    possible_names = {"sphere": Sphere(n_dim, boundary),
+                      "rastrigin": Rastrigin(n_dim, boundary),
+                      "rosenbrock": Rosenbrock(n_dim, boundary),
+                      "schwefel": Schwefel(n_dim, boundary),
+                      "griewank": Griewank(n_dim, boundary)}
+    if name not in possible_names.keys():
+        print("Warning, fitness name is not recognized")
+        print("Admissible fitness names are : 'sphere', 'rastrigin', 'rosenbrock', 'schwefel', 'griewank'")
+        print("sphere fitness is taken by default")
+        name = "sphere"
+    return possible_names[name]
+
 class GA:
     def __init__(self, nb_genes, initial_pop_size, bound_min, bound_max, fitness_name, elites = 0, cull = 0):
         self.nb_genes = nb_genes
@@ -51,14 +66,15 @@ class GA:
         self.bound_max = bound_max
         self.elites = elites
         self.cull = cull
-        self.fitness = Fitness(fitness_name)
-        self.selection = Selection(100, name = "naive", fitness_func = self.fitness.evaluate)
+        # self.fitness = Fitness(fitness_name)
+        self.fitness = Fitness(fitness_name, nb_genes, [bound_min, bound_max])
+        self.selection = Selection(100, name = "naive", fitness_func = self.fitness.value)
         self.select_number = 100
         self.crossover = None
         self.mutation = None
 
     def selection_init(self, number, name = "wheel", tournament_size = None, proba = None):
-        self.selection = Selection(number, name = name, fitness_func = self.fitness.evaluate, tournament_size = tournament_size, proba=proba)
+        self.selection = Selection(number, name = name, fitness_func = self.fitness.value, tournament_size = tournament_size, proba=proba)
         self.select_number = number
 
     def crossover_init(self, child_nb, name = "uniform", alpha = 0, rate = 1):
@@ -72,57 +88,57 @@ class GA:
     def simulation(self,  nb_gen = 500, precision = 4, printer = True, thresh_reset = 150):
         parents = np.random.uniform(self.bound_min, self.bound_max, (self.nb_genes, self.initial_pop_size))
         if printer:
-            print("Gen 0 best minimization = {}".format(round(self.fitness.evaluate(parents).min(), precision)))
+            print("Gen 0 best minimization = {}".format(round(self.fitness.value(parents).min(), precision)))
         if self.mutation.name == "cmaes":
             for i in range(1, nb_gen+1):
                 selected_parents, idx = self.selection.apply(parents)
                 # cmaes mutation
                 children = self.mutation.apply(parents, idx=idx)
                 if i % 10 == 0 and printer:
-                    print("Gen {} best minimization = {}".format(i, round(self.fitness.evaluate(children).min(), precision)))
+                    print("Gen {} best minimization = {}".format(i, round(self.fitness.value(children).min(), precision)))
                 parents = children
         else:
             all_width = np.linspace(1e-4, self.mutation.initial_std_width, nb_gen)[::-1]
             all_scores = []
             for i in range(1, nb_gen+1):
                 selected_parents, idx = self.selection.apply(parents)
-                selected_parents = elitism(parents, selected_parents, self.fitness.evaluate, number=1)
+                selected_parents = elitism(parents, selected_parents, self.fitness.value, number=1)
                 # all crossed children
                 children = self.crossover.apply(selected_parents)
                 # mutation
                 children = self.mutation.apply(children, width = all_width[i-1])
                 # elitism & culling
-                children = elitism(selected_parents, children, self.fitness.evaluate, number=self.elites)
-                children = culling(children, self.fitness.evaluate, number = self.cull)
+                children = elitism(selected_parents, children, self.fitness.value, number=self.elites)
+                children = culling(children, self.fitness.value, number = self.cull)
                 if i % 10 == 0 and printer:
                     #print("---------------------------------------------")
-                    score = round(self.fitness.evaluate(children).min(), precision)
+                    score = round(self.fitness.value(children).min(), precision)
                     all_scores.append(score)
                     print("Gen {} best minimization = {}".format(i, score))
                 parents = children
-                if (i%(nb_gen//4) == 2 and self.fitness.evaluate(parents).min()>thresh_reset):
+                if (i%(nb_gen//4) == 2 and self.fitness.value(parents).min()>thresh_reset):
                     parents = np.random.uniform(3*self.bound_min/4, 3*self.bound_max/4, parents.shape)
-        return children, children[:, np.argmin(self.fitness.evaluate(children))]
+        return children, children[:, np.argmin(self.fitness.value(children))]
 
     def multiple_runs(self, nb_runs=10, nb_gen=1000, precision=4,printer=False, thresh_reset = 150):
         minimal_val = np.zeros(nb_runs)
         results = np.zeros((self.nb_genes, nb_runs))
         for i in range(nb_runs):
             children, best_child = self.simulation(nb_gen = nb_gen, precision = precision, printer = printer, thresh_reset = thresh_reset)
-            fit_eval = np.around(self.fitness.evaluate(best_child[:,None]),precision)
+            fit_eval = np.around(self.fitness.value(best_child[:,None]),precision)
             minimal_val[i] = fit_eval
             results[:, i] = best_child
             print(f"Run {i} best fitness = {fit_eval}")
             self.mutation.reinitialize_maes()
         avg_val = round(np.mean(minimal_val), precision)
         std_val = round(np.std(minimal_val), precision)
-        best_overall = np.around(results[:, np.argmin(self.fitness.evaluate(results))], precision)
+        best_overall = np.around(results[:, np.argmin(self.fitness.value(results))], precision)
         print("======================================================")
         print(f"{nb_runs} simulations of {nb_gen} generations report:")
         print("Average fitness = ", avg_val)
         print("Average fitness Std = ", std_val)
         print("Best individual overall = ", np.around(best_overall, precision))
-        print("Best fitness overall = ", np.around(np.min(self.fitness.evaluate(results)), precision))
+        print("Best fitness overall = ", np.around(np.min(self.fitness.value(results)), precision))
         return best_overall, results, avg_val, std_val
 
 

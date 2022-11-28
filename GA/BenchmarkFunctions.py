@@ -127,7 +127,7 @@ class Rastrigin(BenchmarkFunction):
         if len(X.shape) < 2:
             X = X.reshape((self.__n_dim, 1))
         S = np.sum(X ** 2 - A * np.cos(2 * np.pi * X), axis=0)
-        return A * self.__n_dim + S
+        return A* self.__n_dim + S
 
     def value_2D(self, x, y):
         return 10*self.__n_dim + x**2 + y**2 - 10*(np.cos(2*np.pi*x)+np.cos(2*np.pi*y))
