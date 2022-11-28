@@ -2,11 +2,14 @@ import numpy as np
 
 
 class Particle:
+    """
+    Class for a Particle of a swarm for a Particle Swarm Optimization
+    """
     def __init__(self, D, boundary, value):
         """
         Constructor of the class Particle
         :param D: Number of dimension of the search space
-        :param boundary: boundaries (lower and upper value) for all the dimension
+        :param boundary: boundaries (lower and upper value) for all the dimension (i.e. list with two values)
         """
         # Position of the particle
         self.__position = np.random.uniform(boundary[0], boundary[1], D)
@@ -16,7 +19,7 @@ class Particle:
         self.__bestSP = self.__position
         # Informants initially set to None
         self.__informants = None
-        #Value
+        # Value
         self.__fitness_value = value
 
     def set_informant(self, informants):

@@ -13,6 +13,15 @@ class PSO:
     """
 
     def __init__(self, n_particles, D, boundary, init_value, opt=None):
+        """
+        Constructor of the class PSO
+        :param n_particles: number of particles in the swarm
+        :param D: dimension of the search space
+        :param boundary: boundaries (lower and upper value) for all the dimension (i.e. list with two values)
+        :param init_value: initial values for the fitness for each Particle
+        :param opt: list with the optimizers (could be ['time_varying_inertia'] or for example with the two possible optimizers
+                    ['time_varying_inertia', 'time_varying_acceleration'])
+        """
         # PSO Problem
         self.__fitness = None
         self.__dim = D
@@ -105,6 +114,8 @@ class PSO:
         """
         Update the velocity of each Particle
         :param best_pos: best position seen by any member of the population
+        :param n_iter_max : maximum possible number of iteration
+        :param n_iter : current number of iteration
         :return:
         """
         for i in range(len(self.__population)):
@@ -142,7 +153,9 @@ class PSO:
 
     def time_varying_inertia_weight(self, n_iter_max, n_iter):
         """
-        Time varying inertia weight from
+        Time varying inertia weight implementation from Y. Shi and R.C. Eberhart. Empirical study of particle swarm optimization. In Proceedings of the 1999
+Cong    ress on Evolutionary Computation-CEC99 (Cat. No. 99TH8406), volume 3, pages 1945–1950 Vol. 3,
+July    1999
         :param n_iter_max: the maximum of the iteration number
         :param n_iter: current iteration number
         :return:
