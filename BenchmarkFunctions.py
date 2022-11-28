@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from abc import ABC, abstractmethod
+import copy
 
 
 class BenchmarkFunction(ABC):
@@ -110,11 +111,23 @@ class Rastrigin(BenchmarkFunction):
         self.__n_dim = n_dim
         self.__boundary = boundary
 
+    # def value(self, x):
+    #     cnt = 10*self.__n_dim
+    #     for i in range(self.__n_dim):
+    #         cnt += x[i]**2-10*np.cos(2*np.pi*x[i])
+    #     return cnt
+
     def value(self, x):
-        cnt = 10*self.__n_dim
-        for i in range(self.__n_dim):
-            cnt += x[i]**2-10*np.cos(2*np.pi*x[i])
-        return cnt
+        cnt = 10 * self.__n_dim
+        X = copy.deepcopy(x)
+        if isinstance(X, list):
+            X = np.array(X)
+        if X.shape[0] != self.__n_dim:
+            X = X.T
+        if len(X.shape) < 2:
+            X = X.reshape((self.__n_dim, 1))
+        S = np.sum(X ** 2 - A * np.cos(2 * np.pi * X), axis=0)
+        return cnt + S
 
     def value_2D(self, x, y):
         return 10*self.__n_dim + x**2 + y**2 - 10*(np.cos(2*np.pi*x)+np.cos(2*np.pi*y))
@@ -125,11 +138,24 @@ class Rosenbrock(BenchmarkFunction):
         self.__n_dim = n_dim
         self.__boundary = boundary
 
+    # def value(self, x):
+    #     cnt = 0
+    #     for i in range(self.__n_dim-1):
+    #         cnt += 100*(x[i+1]-x[i]**2)**2 + (1-x[i])**2
+    #     return cnt
+
     def value(self, x):
-        cnt = 0
-        for i in range(self.__n_dim-1):
-            cnt += 100*(x[i+1]-x[i]**2)**2 + (1-x[i])**2
-        return cnt
+        X = copy.deepcopy(x)
+        if isinstance(X, list):
+            X = np.array(X)
+        if X.shape[0] != self.__n_dim:
+            X = X.T
+        if len(X.shape) < 2:
+            X = X.reshape((self.__n_dim, 1))
+        xi = X[:-1, :]
+        xp1 = X[1:, :]
+        S = np.sum(100 * (xp1 - xi ** 2) ** 2 + (1 - xi) ** 2, axis=0)
+        return S
 
     def value_2D(self, x, y):
         return 100*(x-y**2)**2 + (1-y)**2
@@ -141,8 +167,19 @@ class Sphere(BenchmarkFunction):
         self.__n_dim = n_dim
         self.__boundary = boundary
 
+    # def value(self, x):
+    #     return np.sum(x**2)
+
     def value(self, x):
-        return np.sum(x**2)
+        X = copy.deepcopy(x)
+        if isinstance(X, list):
+            X = np.array(X)
+        if X.shape[0] != self.__n_dim:
+            X = X.T
+        if len(X.shape) < 2:
+            X = X.reshape((self.__n_dim, 1))
+        S = np.sum(X**2, axis=0)
+        return S
 
     def value_2D(self, x, y):
         return x**2+y**2
@@ -154,15 +191,31 @@ class Schwefel(BenchmarkFunction):
         self.__boundary = boundary
         self.__noise = noise
 
+    # def value(self, x):
+    #     if self.__noise:
+    #         noise = np.abs(np.random.randn())
+    #     else:
+    #         noise = 0
+    #     cnt = 0
+    #     for i in range(1, self.__n_dim):
+    #         cnt += np.sum(x[0:i])**2
+    #     return cnt*(1+0.4*noise)
+
     def value(self, x):
+        X = copy.deepcopy(x)
+        if isinstance(X, list):
+            X = np.array(X)
+        if X.shape[0] != self.__n_dim:
+            X = X.T
+        if len(X.shape) < 2:
+            X = X.reshape((self.__n_dim, 1))
         if self.__noise:
             noise = np.abs(np.random.randn())
         else:
             noise = 0
-        cnt = 0
-        for i in range(1, self.__n_dim):
-            cnt += np.sum(x[0:i])**2
-        return cnt*(1+0.4*noise)
+        s1 = np.array([np.sum(X[:(i + 1), :], axis=0) for i in range(len(X))])
+        s2 = np.sum(s1 ** 2, axis=0)
+        return s2*(1+0.4*noise)
 
     def value_2D(self, x, y):
         if self.__noise:
@@ -179,18 +232,29 @@ class Griewank(BenchmarkFunction):
         self.__boundary = boundary
         self.__noise = noise
 
+    # def value(self, x):
+    #     if self.__noise:
+    #         noise = 0.3*np.abs(np.random.randn())
+    #     else:
+    #         noise = 0
+    #     z = (1+noise)*x
+    #     cnt = 0
+    #     prod = 1
+    #     for i in range(0, self.__n_dim):
+    #         cnt += z[i]**2/4000
+    #         prod *= np.cos(z[i]/np.sqrt(i+1))
+    #     return cnt - prod + 1
+
     def value(self, x):
-        if self.__noise:
-            noise = 0.3*np.abs(np.random.randn())
-        else:
-            noise = 0
-        z = (1+noise)*x
-        cnt = 0
-        prod = 1
-        for i in range(0, self.__n_dim):
-            cnt += z[i]**2/4000
-            prod *= np.cos(z[i]/np.sqrt(i+1))
-        return cnt - prod + 1
+        X = copy.deepcopy(x)
+        if isinstance(X, list):
+            X = np.array(X)
+        if X.shape[0] != self.__n_dim:
+            X = X.T
+        if len(X.shape) < 2:
+            X = X.reshape((self.__n_dim, 1))
+        S = 1 + np.sum((X ** 2), axis=0) / 4000 - np.prod(np.cos(np.array([[1 / np.sqrt(i)] for i in range(1, x.shape[0] + 1)]) * X), axis=0)
+        return S
 
     def value_2D(self, x, y):
         if self.__noise:
