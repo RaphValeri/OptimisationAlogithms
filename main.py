@@ -32,7 +32,7 @@ epsilon = 1                                 # Step for the update of the positio
 selection = "tournament"                                        # Selection type. Possible choices : "tournament", "roulette", "naive".
                                                                 # Naive consists in blindly taking the best individuals.
 
-tournament_size = 5                                            # For Tournament selection only, the tournament size. Should be < n_pop
+tournament_size = 10                                            # For Tournament selection only, the tournament size. Should be < n_pop
 winner_proba = 0.9                                              # For Tournament selection only, proba p that winner is selected.
                                                                 # Otherwise, ranked n of tournament is selected with proba p(1-p)^(n-1)
 
@@ -42,7 +42,7 @@ how_many_selected = int(min(percentage_pop_selected, 1)*n_pop)  # number of pop 
 crossover = 'k-points'                                          # Crossover type. Possible choices : 'k-points', 'uniform', 'blx-alpha'
 cp = 0.8                                                        # Crossover rate. When crossover doesn't occur, parents simply go to next generation
 k_points = 1                                                    # Only for k-points crossover : number of cuts in genome. Should be < dimension//2
-alpha = 0.05                                                     # Only for blx-alpha. blx-alpha range of search. Often taken between 0.1 and 0.15
+alpha = 0.1                                                     # Only for blx-alpha. blx-alpha range of search. Often taken between 0.1 and 0.15
 
 mutation = "shrink"                                             # Mutation type. Possible choices : 'shrink', 'cmaes'
                                                                 # 'shrink' corresponds to Gaussian shrinkage
