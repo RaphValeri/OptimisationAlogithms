@@ -7,17 +7,21 @@ def uniform_crossover(x,y, alpha = 0.5, crossover_rate = 1):
     uniform crossing
     :param x: parent x (numpy : shape = (n,1))
     :param y: parent y (numpy : shape = (n,1))
-    :param alpha: hyperparameter
-    :return: crossover children
+    :param alpha: blend probability hyperparameter. Taken as 0.5 by default (uniform crossover)
+    :return: crossover children in a (n,2) array
     """
+    #check if crossover event occurs by comparaing a uniform numer to crossover rate
     crossover_event = (np.random.uniform(0,1)<crossover_rate)
     if crossover_event:
         nb_points = x.shape[0]
         choices = np.array([0, 1])
         weights = np.array([1-alpha, alpha])
+        #uniform factor containing 0 and 1 with alpha and 1-alpha proba
         random_factor = np.random.choice(choices, size=(nb_points, 1), p=weights)
+        # mixing the genomes uniformly
         child1 = random_factor*x + (1-random_factor)*y
         child2 = random_factor*y + (1-random_factor)*x
+    # when not occuring, parents are transferred to next gen
     else:
         child1 = x
         child2 = y
@@ -28,16 +32,20 @@ def k_points_crossover(x,y, alpha = 2, crossover_rate = 1):
     k_points crossing
     :param x: parent x (numpy : shape = (n,1))
     :param y: parent y (numpy : shape = (n,1))
-    :param alpha: hyperparameter
-    :return: crossover children
+    :param alpha: k, number of points in crossover
+    :return: crossover children in a (n,2) array
     """
+    # check if crossover event occurs by comparaing a uniform numer to crossover rate
     crossover_event = (np.random.uniform(0, 1) < crossover_rate)
     if crossover_event:
         nb_points = x.shape[0]
+        # choosing the k cuts in the genome
         k_points = np.random.choice(nb_points-1, size = alpha, replace = False)
         k_points = np.sort(k_points)
         genes_fact = np.zeros((nb_points,1))
+        # applying k-points crossing by distinguisinhg different values of alpha
         if alpha==1:
+            # alpha = 1 : one point crossover
             genes_fact[k_points[0]:]=1
             child1 = genes_fact * x + (1 - genes_fact) * y
             child2 = genes_fact * y + (1 - genes_fact) * x
@@ -48,6 +56,7 @@ def k_points_crossover(x,y, alpha = 2, crossover_rate = 1):
                     genes_fact[k_points[i]+1:k_points[i+1]+1] = 1
                 if (i+1)==alpha-1:
                     break
+        # alpha % 2 == 1
         else:
             for i in range(alpha):
                 if i==alpha-1:
@@ -57,6 +66,7 @@ def k_points_crossover(x,y, alpha = 2, crossover_rate = 1):
                     genes_fact[k_points[i]+1:k_points[i+1]+1] = 1
         child1 = genes_fact*x + (1-genes_fact)*y
         child2 = genes_fact*y + (1-genes_fact)*x
+    # when not occuring, parents are transferred to next gen
     else :
         child1 = x
         child2 = y
@@ -67,19 +77,22 @@ def blx_alpha_crossover(x,y, alpha = 0.1, crossover_rate=1):
     crossover genetic operation by blx_alpha
     :param x: parent x (numpy : shape = (n,1))
     :param y: parent y (numpy : shape = (n,1))
-    :param alpha: hyperparameter
-    :return: crossover child
+    :param alpha: search range hyperparameter
+    :return: crossover children in a (n,2) array
     """
     i_size = len(x)
     crossover_event = (np.random.uniform(0, 1) < crossover_rate)
+    # check if crossover event occurs by comparaing a uniform numer to crossover rate
     if crossover_event:
         nx, ny = x.reshape((i_size,1)), y.reshape((i_size, 1))
         conc_xy = np.hstack((nx,ny))
         min_conc = conc_xy.min(axis=1)
         max_conc = conc_xy.max(axis=1)
         dist = np.abs(max_conc - min_conc)
+        # The blx alpha crossover
         child = np.random.uniform(min_conc - alpha*dist, max_conc + alpha*dist)
         return child.reshape((i_size, 1))
+    # when not occurring, parents passed to next gen
     else:
         r = np.random.choice([0,1], p = [0.5, 0.5])
         child = r*x + (1-r)*y
@@ -87,11 +100,11 @@ def blx_alpha_crossover(x,y, alpha = 0.1, crossover_rate=1):
 
 def sbx_crossover(x,y, alpha = 5, crossover_rate=1):
     """
-    crossover genetic operation by blx_alpha
+    crossover genetic operation by simulated binary crossover
     :param x: parent x (numpy : shape = (n,1))
     :param y: parent y (numpy : shape = (n,1))
-    :param alpha: hyperparameter
-    :return: crossover child
+    :param alpha: search range hyperparameter
+    :return: crossover children in a (n,2) array
     """
     i_size = len(x)
     crossover_event = (np.random.uniform(0, 1) < crossover_rate)
@@ -108,15 +121,16 @@ def sbx_crossover(x,y, alpha = 5, crossover_rate=1):
 def crossing(S, fitness, crossover = blx_alpha_crossover, child_nb=100, alpha=0.1, crossover_rate =1):
     """
     Effective crossing of selected population
-    :param S: selected population by (descending) sorted fitness
-    :param child_nb:
-    :param alpha:
-    :return:
+    :param S: selected parents population
+    :param child_nb: number of children to produce (possibility to exceed by 1 if children are generated 2 by 2)
+    :param alpha: hyperparameter
+    :return: population of children, sorted by fitness
     """
     nb_points = S.shape[0]
     pop = S.shape[1]
     A = np.zeros((nb_points,1))
     while A.shape[1]<child_nb+1:
+        # randomly choosing 2 different parents
         i = np.random.randint(pop)
         j = np.random.randint(pop)
         while i==j:
@@ -132,6 +146,13 @@ def crossing(S, fitness, crossover = blx_alpha_crossover, child_nb=100, alpha=0.
 
 class Crossover:
     def __init__(self, child_nb, name="uniform", alpha = 0.1, rate = 1):
+        """
+        Crossover class
+        :param child_nb: number of children
+        :param name: type of crossover. possible names : 'uniform', 'k-points', 'blx-alpha', 'sbx'
+        :param alpha: hyperparameter of the crossover
+        :param rate: crossover rate
+        """
         self.child_nb = child_nb
         self.possible_crossovers = {"uniform": uniform_crossover,
                                     "k-points": k_points_crossover,
@@ -152,9 +173,9 @@ class Crossover:
         """
         Effective crossing of selected population
         :param S: selected population by (descending) sorted fitness
-        :param child_nb:
-        :param alpha:
-        :return:
+        :param child_nb: number of children
+        :param alpha: crossovr hyperparameter
+        :return: children array of shape (n, child_nb)
         """
         nb_points = population.shape[0]
         pop_size= population.shape[1]
