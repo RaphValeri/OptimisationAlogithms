@@ -7,7 +7,7 @@ from GA_class import *
 ###############################################################################################
 # HYPER-PARAMETERS
 ###############################################################################################
-dimension = 10                              # Dimension of the fitness function
+dimension = 30                              # Dimension of the fitness function
 n_pop = 40                                  # Population size
 n_iter = 3000                               # Number of maximum iteration
 
