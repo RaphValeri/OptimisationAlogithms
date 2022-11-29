@@ -13,13 +13,20 @@ n_iter = 3000                               # Number of maximum iteration
 
 # Particle Swarm Optimization (PSO)
 n_inf = 'random'                            # Number of informants for each particle (could be a number or 'random')
-opt = ['time_varying_inertia',              # Optimizer : list of adaptive techniques you want to use
-       'time_varying_acceleration']
-alpha = [0.4, 0.9]                          # Weight for the inertia component
+opt = ['time_varying_inertia',              # Optimizer : list of adaptive techniques you want to use (among 'time_varying_inertia' and time_varying_acceleration')
+       'time_varying_acceleration']         #               if you don't want to use one you need to provide an empty list []
+alpha_pso = [0.4, 0.9]                      # Weight for the inertia component
 beta = [2.5, 0.5]                           # Weight for the cognitive component
 gamma = [0.5, 2.5]                          # Weight for the social component
 delta = 0.4                                 # Weight for the best position seen by all the population
 epsilon = 1                                 # Step for the update of the position given the velocity
+
+#   Note that if you want to use an adaptive weight for alpha and/or beta and gamma, you need to provide a list of two
+#   values for these fields (first the initial value and then the final value).
+#     e.g. opt = ['time_varying_inertia']
+#          alpha = [0.4, 0.9]
+
+
 
 # Genetic Algorithm (GA)
 selection = "tournament"                                        # Selection type. Possible choices : "tournament", "roulette", "naive".
@@ -90,10 +97,10 @@ def main():
     boundary, fitness, fitness_string = set_fitness(args)
     if args.pso:
         if args.k_test:
-            PSO.repeted_test(fitness, dimension, boundary, args.k_test, n_pop, opt, alpha, beta, gamma, delta, epsilon, n_iter, n_inf)
+            PSO.repeted_test(fitness, dimension, boundary, args.k_test, n_pop, opt, alpha_pso, beta, gamma, delta, epsilon, n_iter, n_inf)
         else:
             pso = PSO.PSO(n_particles=n_pop, D=dimension, boundary=boundary, init_value=1000, opt=opt)
-            pso.set_hyperparameters(alpha, beta, gamma, delta, epsilon)
+            pso.set_hyperparameters(alpha_pso, beta, gamma, delta, epsilon)
             pso.set_fitness(fitness)
             pso.optimization_algorithm(n_iter=n_iter, n_informants=n_inf)
             if args.plot:

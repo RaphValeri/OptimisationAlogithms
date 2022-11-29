@@ -61,7 +61,7 @@ class BenchmarkFunction(ABC):
         plt.xlabel('x1')
         plt.ylabel('x2')
         plt.legend()
-        plt.show()
+        #plt.show()
         plt.pause(0.5)
 
     def plot_3D(self, x, population):
@@ -106,16 +106,13 @@ class BenchmarkFunction(ABC):
 
 
 class Rastrigin(BenchmarkFunction):
+    """
+    Rastrigin benchmark function
+    """
     def __init__(self, n_dim, boundary):
         super().__init__(n_dim, boundary, 'Rastrigin')
         self.__n_dim = n_dim
         self.__boundary = boundary
-
-    # def value(self, x):
-    #     cnt = 10*self.__n_dim
-    #     for i in range(self.__n_dim):
-    #         cnt += x[i]**2-10*np.cos(2*np.pi*x[i])
-    #     return cnt
 
     def value(self, x):
         A = 10
@@ -133,16 +130,13 @@ class Rastrigin(BenchmarkFunction):
         return 10*self.__n_dim + x**2 + y**2 - 10*(np.cos(2*np.pi*x)+np.cos(2*np.pi*y))
 
 class Rosenbrock(BenchmarkFunction):
+    """
+    Rosenbrock benchmark function
+    """
     def __init__(self, n_dim, boundary):
         super().__init__(n_dim, boundary, 'Rosenbrock')
         self.__n_dim = n_dim
         self.__boundary = boundary
-
-    # def value(self, x):
-    #     cnt = 0
-    #     for i in range(self.__n_dim-1):
-    #         cnt += 100*(x[i+1]-x[i]**2)**2 + (1-x[i])**2
-    #     return cnt
 
     def value(self, x):
         X = copy.deepcopy(x)
@@ -162,6 +156,9 @@ class Rosenbrock(BenchmarkFunction):
 
 
 class Sphere(BenchmarkFunction):
+    """
+    Sphere benchmark function
+    """
     def __init__(self, n_dim, boundary):
         super().__init__(n_dim, boundary, 'Rosenbrock')
         self.__n_dim = n_dim
@@ -185,21 +182,14 @@ class Sphere(BenchmarkFunction):
         return x**2+y**2
 
 class Schwefel(BenchmarkFunction):
+    """
+    Schwefel benchmark function
+    """
     def __init__(self, n_dim, boundary, noise=True):
         super().__init__(n_dim, boundary, 'Schwefel')
         self.__n_dim = n_dim
         self.__boundary = boundary
         self.__noise = noise
-
-    # def value(self, x):
-    #     if self.__noise:
-    #         noise = np.abs(np.random.randn())
-    #     else:
-    #         noise = 0
-    #     cnt = 0
-    #     for i in range(1, self.__n_dim):
-    #         cnt += np.sum(x[0:i])**2
-    #     return cnt*(1+0.4*noise)
 
     def value(self, x):
         X = copy.deepcopy(x)
@@ -226,24 +216,15 @@ class Schwefel(BenchmarkFunction):
         return cnt*(1+0.4*noise)
 
 class Griewank(BenchmarkFunction):
-    def __init__(self, n_dim, boundary, noise=True):
+    """
+    Griewank benchmark function
+    """
+    def __init__(self, n_dim, boundary, noise=False):
         super().__init__(n_dim, boundary, 'Griewank')
         self.__n_dim = n_dim
         self.__boundary = boundary
         self.__noise = noise
 
-    # def value(self, x):
-    #     if self.__noise:
-    #         noise = 0.3*np.abs(np.random.randn())
-    #     else:
-    #         noise = 0
-    #     z = (1+noise)*x
-    #     cnt = 0
-    #     prod = 1
-    #     for i in range(0, self.__n_dim):
-    #         cnt += z[i]**2/4000
-    #         prod *= np.cos(z[i]/np.sqrt(i+1))
-    #     return cnt - prod + 1
 
     def value(self, x):
         X = copy.deepcopy(x)

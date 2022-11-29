@@ -6,8 +6,22 @@ from BenchmarkFunctions import BenchmarkFunction, Rastrigin, Rosenbrock, Sphere,
 
 
 class PSO:
+    """
+    Implementation of a Particle Swarm Optimization
+    A population of particle (instance of Particle class) searches the global optima of a function (fitness function) using cognitive and social factor
+    when updating the velocity and then the position of the particles in the search space.
+    """
 
     def __init__(self, n_particles, D, boundary, init_value, opt=None):
+        """
+        Constructor of the class PSO
+        :param n_particles: number of particles in the swarm
+        :param D: dimension of the search space
+        :param boundary: boundaries (lower and upper value) for all the dimension (i.e. list with two values)
+        :param init_value: initial values for the fitness for each Particle
+        :param opt: list with the optimizers (could be ['time_varying_inertia'] or for example with the two possible optimizers
+                    ['time_varying_inertia', 'time_varying_acceleration'])
+        """
         # PSO Problem
         self.__fitness = None
         self.__dim = D
@@ -100,6 +114,8 @@ class PSO:
         """
         Update the velocity of each Particle
         :param best_pos: best position seen by any member of the population
+        :param n_iter_max : maximum possible number of iteration
+        :param n_iter : current number of iteration
         :return:
         """
         for i in range(len(self.__population)):
@@ -137,7 +153,9 @@ class PSO:
 
     def time_varying_inertia_weight(self, n_iter_max, n_iter):
         """
-        Time varying inertia weight from
+        Time varying inertia weight implementation from Y. Shi and R.C. Eberhart. Empirical study of particle swarm optimization. In Proceedings of the 1999
+Cong    ress on Evolutionary Computation-CEC99 (Cat. No. 99TH8406), volume 3, pages 1945–1950 Vol. 3,
+July    1999
         :param n_iter_max: the maximum of the iteration number
         :param n_iter: current iteration number
         :return:
@@ -174,9 +192,9 @@ class PSO:
                 # Evaluation of the Particle i
                 part = self.__population[i]
                 # Update of fitness value and the best SP of the particle
-                part.setFitnessValue(self.__fitness.value(part.getPosition()))
+                part.setFitnessValue(np.round(self.__fitness.value(part.getPosition()), 6))  # round to 10^(-6)
                 # Update of the best Particle
-                if part.getFitnessValue() < self.__fitness.value(best_position):
+                if part.getFitnessValue() < np.round(self.__fitness.value(best_position), 6):
                     best_position = part.getPosition()
             # Update velocity
             self.update_velocity(best_position, n_iter_max = n_iter, n_iter=n)
@@ -191,16 +209,16 @@ class PSO:
                     elif new_pos[j] > self.__boundary[1]:
                         new_pos[j] = self.__boundary[1]
                 part.setPosition(new_pos)
-            if ((n_iter >= 2000) and ((n % 500) == 0 or n == n_iter-1)) or ((n_iter < 2000) and ((n % 5) == 0 or n == n_iter-1)):
+            if ((n_iter >= 2000) and ((n % 500) == 0 or n == n_iter-1)) or ((n_iter < 2000) and ((n % 30) == 0 or n == n_iter-1)):
                 print('---'*10)
-                print('Iteration {} - Best value = {} for position = {}'.format(n, self.__fitness.value(best_position), best_position))
+                print('Iteration {} - Best value = {} for position = {}'.format(n, np.round(self.__fitness.value(best_position), 6)[0], best_position))
             # Update the history
             self.__history['iteration'].append(n)
             self.__history['position'].append(best_position)
-            self.__history['fitness_value'].append(self.__fitness.value(best_position))
+            self.__history['fitness_value'].append(np.round(self.__fitness.value(best_position), 6))
             # Continuous 2D plot for 2D problem (contour visualization)
-            #if self.__dim == 2:
-                #self.__fitness.plot_2D(best_position, [self.__population[i].getPosition() for i in range(len(self.__population))])
+            if self.__dim == 2:
+                self.__fitness.plot_2D(best_position, [self.__population[i].getPosition() for i in range(len(self.__population))])
 
         # 3D plot at the end of the algorithm for 2D problem
         if self.__dim == 2:
@@ -271,7 +289,7 @@ def repeted_test(fitness, n_dim, boundary, n_test, n_particles, opt, alpha, beta
         history_iter.append(history_k['iteration'])
         history_fit.append(history_k['fitness_value'])
         history_pos.append(history_k['position'])
-        # Add the inforamtion of the best fitness
+        # Add the information of the best fitness
         best_fit.append(fit_min)
         best_iter.append(iter_min)
         best_pos.append(pos_value)
@@ -284,10 +302,14 @@ def repeted_test(fitness, n_dim, boundary, n_test, n_particles, opt, alpha, beta
 
 
 def plot_hyperparameter_investigation(ax, history_best_fit, history_best_it, xlabel):
-    #fig, ax = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True)
-    #title = 'Hyperparameter {} investigation'.format(xlabel)
-    #fig.suptitle(title, fontsize=16, fontweight='bold')
-    # Plot the evolution of the best fitness value
+    """
+    Plot of the hyperparameter investigation (boxplot of ten repeated run)
+    :param ax: axes (instance of Matplotlib.Axes)
+    :param history_best_fit: dictionary with the best fitness of each run related to the value of the hyperparamter
+    :param history_best_it: dictionary with the minimum iteration to converge for each run related to the value of the hyperparamter
+    :param xlabel: label to display in the x-axis (also name of the investigated hyperparameter)
+    :return: plot
+    """
     ax.set_title('Best fitness value related to the {} value'.format(xlabel))
     ax.boxplot([history_best_fit[key] for key in history_best_fit.keys()], showfliers=False)
     ax.set_xticks(np.arange(1, len(history_best_fit.keys()) + 1))
@@ -295,26 +317,19 @@ def plot_hyperparameter_investigation(ax, history_best_fit, history_best_it, xla
     ax.set_xlabel(xlabel)
     ax.set_ylabel('Best fitness value (lower is the best))')
     ax.grid()
-    #Plot the number of the iteration needed to reach the best fitness value
-    # ax[1].set_title('Number of iteration to reach the best fitness value')
-    # ax[1].boxplot([history_best_it[key] for key in history_best_it.keys()], showfliers=False)
-    # ax[1].set_xticks(np.arange(1, len(history_best_it.keys()) + 1))
-    # ax[1].set_xticklabels([key for key in history_best_it.keys()])
-    # ax[1].set_xlabel(xlabel)
-    # ax[1].set_ylabel('Number of iteration')
-    # ax[1].grid()
+
 
 
 
 if __name__ == '__main__':
     # PROBLEM
     n_dim = 10
-    boundary = [-600, 600]
-    fitness = Griewank(n_dim, boundary, noise=False)
+    boundary = [-100, 100]
+    fitness = Rosenbrock(n_dim, boundary)
 
     # HYPER-PARAMETERS
-    eps = 1.0               # step for the update of the position given the velocity
-    #alpha = 1.0            # weight for the previous velocity (inertia component)
+    eps = 0.8               # step for the update of the position given the velocity
+    alpha = 1.0            # weight for the previous velocity (inertia component)
     beta = 1.8              # weight for the cognitive component
     gamma = 1.8             # weight for the social component
     delta = 0.6             # weight for the best position seen by all the population
@@ -325,85 +340,87 @@ if __name__ == '__main__':
     gamma_opt = [0.5, 2.5]  # For time varying acceleration coefficient(TVAC)
 
     # PSO Algorithm
-    # pso = PSO(n_particles=40, D=n_dim, boundary=boundary, init_value=100, opt=['time_varying_inertia', 'time_varying_acceleration'])
-    # pso.set_hyperparameters(alpha_opt, beta_opt, gamma_opt, delta, eps)
-    # pso.set_fitness(fitness)
+    pso = PSO(n_particles=40, D=n_dim, boundary=boundary, init_value=100, opt=['time_varying_inertia', 'time_varying_acceleration'])
+    pso.set_hyperparameters(alpha_opt, beta_opt, gamma_opt, delta, eps)
+    pso.set_fitness(fitness)
 
-    #history_iter, history_fit, history_pos, best_fit, best_iter, best_pos = repeted_test(fitness, n_dim, boundary, n_test=10, n_particles=40, opt=['time_varying_inertia', 'time_varying_acceleration'], alpha=alpha_opt, beta=beta_opt, gamma=gamma_opt, delta=delta, eps=0.8, iter_max=3000, n_informants=5)
+    #history_iter, history_fit, history_pos, best_fit, best_iter, best_pos = repeted_test(fitness, n_dim, boundary, n_test=10, n_particles=40, opt=['time_varying_inertia', 'time_varying_acceleration'], alpha=alpha_opt, beta=beta_opt, gamma=gamma_opt, delta=delta, eps=eps, iter_max=3000, n_informants=5)
 
-    # pso.optimization_algorithm(2000, 'random')
+    pso.optimization_algorithm(2000, 'random')
 
-    inf_values = [5, 10, 15, 20, 25, 30, 'random']
-    alpha_values = [0.7, 0.9, 1, 1.1]
-    delta_values = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
-    eps_values = [0.6, 0.8, 1.0, 1.2]
+    # Hyperparameters investigations
 
-    #Alpha values investigations (+opt)
-    print('-----'*10)
-    print('HYPERPARAMETER ALPHA INVESTIGATION')
-    print('-----'*10)
-    history_best_fit_0 = {}
-    history_best_it_0 = {}
-    for alpha in alpha_values:
-        _, _, _, history_best_fit_0[alpha], history_best_it_0[alpha], _ = repeted_test(fitness, n_dim, boundary, n_test=10, n_particles=40,
-            opt=[], alpha=alpha, beta=beta, gamma=gamma,
-            delta=delta, eps=eps, iter_max=3000, n_informants='random')
-
-    _, _, _, history_best_fit_0['TVIW'], history_best_it_0['TVIW'], _ = repeted_test(
-        fitness, n_dim, boundary, n_test=10, n_particles=40,
-        opt=['time_varying_inertia'], alpha=alpha_opt, beta=beta, gamma=gamma,
-        delta=delta, eps=eps, iter_max=3000, n_informants='random')
-
-    _, _, _, history_best_fit_0['TVIW+TVAC'], history_best_it_0['TVIW+TVAC'], _ = repeted_test(
-        fitness, n_dim, boundary, n_test=10, n_particles=40,
-        opt=['time_varying_inertia', 'time_varying_acceleration'], alpha=alpha_opt, beta=beta_opt, gamma=gamma_opt,
-        delta=delta, eps=eps, iter_max=3000, n_informants='random')
-
-    # Delta values investigation
-    print('-----'*10)
-    print('HYPERPARAMETER DELTA INVESTIGATION')
-    print('-----'*10)
-    history_best_fit_1 = {}
-    history_best_it_1 = {}
-    for d in delta_values:
-        _, _, _, history_best_fit_1[d], history_best_it_1[d], _ = repeted_test(fitness, n_dim, boundary, n_test=10,
-                                                                               n_particles=40,
-                                                                               opt=['time_varying_inertia',
-                                                                                    'time_varying_acceleration'],
-                                                                               alpha=alpha_opt, beta=beta_opt,
-                                                                               gamma=gamma_opt, delta=d, eps=eps,
-                                                                               iter_max=3000, n_informants='random')
-
-    #Eps values investigation
-    print('-----'*10)
-    print('HYPERPARAMETER EPSILON INVESTIGATION')
-    print('-----'*10)
-    history_best_fit_2 = {}
-    history_best_it_2 = {}
-    for e in eps_values:
-        _, _, _, history_best_fit_2[e], history_best_it_2[e], _ = repeted_test(fitness, n_dim, boundary, n_test=10, n_particles=40, opt=['time_varying_inertia', 'time_varying_acceleration'], alpha=alpha_opt, beta=beta_opt, gamma=gamma_opt, delta=delta, eps=e, iter_max=3000, n_informants='random')
-
-    # Number of informants values investigation
-    print('-----'*10)
-    print('NUMBER OF INFORMANTS INVESTIGATION')
-    print('-----'*10)
-    history_best_fit_3 = {}
-    history_best_it_3 = {}
-    for inf in inf_values:
-        _, _, _, history_best_fit_3[inf], history_best_it_3[inf], _ = repeted_test(fitness, n_dim, boundary, n_test=10,
-                                                                               n_particles=40,
-                                                                               opt=['time_varying_inertia',
-                                                                                    'time_varying_acceleration'],
-                                                                               alpha=alpha_opt, beta=beta_opt,
-                                                                               gamma=gamma_opt, delta=delta, eps=eps,
-                                                                               iter_max=3000, n_informants=inf)
-
-    fig, ax = plt.subplots(2, 2, figsize=(15, 10))
-    title = 'PSO hyperparameter investigation for {} function in dimension {}'.format(fitness.getName(), n_dim)
-    fig.suptitle(title, fontsize=16, fontweight='bold')
-    plot_hyperparameter_investigation(ax[0, 0], history_best_fit_0, history_best_it_0, r'$\alpha$')
-    plot_hyperparameter_investigation(ax[0, 1], history_best_fit_1, history_best_it_1, r'$\delta$')
-    plot_hyperparameter_investigation(ax[1, 0], history_best_fit_2, history_best_it_2, r'$\epsilon$')
-    plot_hyperparameter_investigation(ax[1, 1], history_best_fit_3, history_best_it_3, r'$n_{informants}$')
-    plt.tight_layout()
-    plt.show()
+    # inf_values = [5, 10, 15, 20, 25, 30, 'random']
+    # alpha_values = [0.7, 0.9, 1, 1.1]
+    # delta_values = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+    # eps_values = [0.6, 0.8, 1.0, 1.2]
+    #
+    # #Alpha values investigations (+opt)
+    # print('-----'*10)
+    # print('HYPERPARAMETER ALPHA INVESTIGATION')
+    # print('-----'*10)
+    # history_best_fit_0 = {}
+    # history_best_it_0 = {}
+    # for alpha in alpha_values:
+    #     _, _, _, history_best_fit_0[alpha], history_best_it_0[alpha], _ = repeted_test(fitness, n_dim, boundary, n_test=10, n_particles=40,
+    #         opt=[], alpha=alpha, beta=beta, gamma=gamma,
+    #         delta=delta, eps=eps, iter_max=3000, n_informants='random')
+    #
+    # _, _, _, history_best_fit_0['TVIW'], history_best_it_0['TVIW'], _ = repeted_test(
+    #     fitness, n_dim, boundary, n_test=10, n_particles=40,
+    #     opt=['time_varying_inertia'], alpha=alpha_opt, beta=beta, gamma=gamma,
+    #     delta=delta, eps=eps, iter_max=3000, n_informants='random')
+    #
+    # _, _, _, history_best_fit_0['TVIW+TVAC'], history_best_it_0['TVIW+TVAC'], _ = repeted_test(
+    #     fitness, n_dim, boundary, n_test=10, n_particles=40,
+    #     opt=['time_varying_inertia', 'time_varying_acceleration'], alpha=alpha_opt, beta=beta_opt, gamma=gamma_opt,
+    #     delta=delta, eps=eps, iter_max=3000, n_informants='random')
+    #
+    # # Delta values investigation
+    # print('-----'*10)
+    # print('HYPERPARAMETER DELTA INVESTIGATION')
+    # print('-----'*10)
+    # history_best_fit_1 = {}
+    # history_best_it_1 = {}
+    # for d in delta_values:
+    #     _, _, _, history_best_fit_1[d], history_best_it_1[d], _ = repeted_test(fitness, n_dim, boundary, n_test=10,
+    #                                                                            n_particles=40,
+    #                                                                            opt=['time_varying_inertia',
+    #                                                                                 'time_varying_acceleration'],
+    #                                                                            alpha=alpha_opt, beta=beta_opt,
+    #                                                                            gamma=gamma_opt, delta=d, eps=eps,
+    #                                                                            iter_max=3000, n_informants='random')
+    #
+    # #Eps values investigation
+    # print('-----'*10)
+    # print('HYPERPARAMETER EPSILON INVESTIGATION')
+    # print('-----'*10)
+    # history_best_fit_2 = {}
+    # history_best_it_2 = {}
+    # for e in eps_values:
+    #     _, _, _, history_best_fit_2[e], history_best_it_2[e], _ = repeted_test(fitness, n_dim, boundary, n_test=10, n_particles=40, opt=['time_varying_inertia', 'time_varying_acceleration'], alpha=alpha_opt, beta=beta_opt, gamma=gamma_opt, delta=delta, eps=e, iter_max=3000, n_informants='random')
+    #
+    # # Number of informants values investigation
+    # print('-----'*10)
+    # print('NUMBER OF INFORMANTS INVESTIGATION')
+    # print('-----'*10)
+    # history_best_fit_3 = {}
+    # history_best_it_3 = {}
+    # for inf in inf_values:
+    #     _, _, _, history_best_fit_3[inf], history_best_it_3[inf], _ = repeted_test(fitness, n_dim, boundary, n_test=10,
+    #                                                                            n_particles=40,
+    #                                                                            opt=['time_varying_inertia',
+    #                                                                                 'time_varying_acceleration'],
+    #                                                                            alpha=alpha_opt, beta=beta_opt,
+    #                                                                            gamma=gamma_opt, delta=delta, eps=eps,
+    #                                                                            iter_max=3000, n_informants=inf)
+    #
+    # fig, ax = plt.subplots(2, 2, figsize=(15, 10))
+    # title = 'PSO hyperparameter investigation for {} function in dimension {}'.format(fitness.getName(), n_dim)
+    # fig.suptitle(title, fontsize=16, fontweight='bold')
+    # plot_hyperparameter_investigation(ax[0, 0], history_best_fit_0, history_best_it_0, r'$\alpha$')
+    # plot_hyperparameter_investigation(ax[0, 1], history_best_fit_1, history_best_it_1, r'$\delta$')
+    # plot_hyperparameter_investigation(ax[1, 0], history_best_fit_2, history_best_it_2, r'$\epsilon$')
+    # plot_hyperparameter_investigation(ax[1, 1], history_best_fit_3, history_best_it_3, r'$n_{informants}$')
+    # plt.tight_layout()
+    # plt.show()
