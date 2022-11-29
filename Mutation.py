@@ -2,9 +2,11 @@ import numpy as np
 from scipy.linalg import sqrtm
 
 def indicator(min, max, x):
+    # for cmaes only
     return (x>=min and x<=max)
 
 def sum_mult(A):
+    # for cmaes only
     n = A.shape[0]
     mu = A.shape[1]
     S = np.zeros((n,n))
@@ -15,7 +17,8 @@ def sum_mult(A):
 def shrink_mutation(X, width, mutation_rate = 0):
     """
     muation of X by gaussian shrink
-    :param X: indiv / pop
+    :param X: indiv / pop (nb_gene, ...)
+    :param width: initial Gaussian variance. 0 triggers auto-scaled variance
     :return:s shrinked mutated X
     """
     nb_points = X.shape[0]
@@ -23,11 +26,11 @@ def shrink_mutation(X, width, mutation_rate = 0):
     choices = np.array([0,1])
     weights = np.array([1-mutation_rate, mutation_rate ])
     bin_factor = np.random.choice(choices, size = X.shape, p = weights)
+    # auto-scale mode
     if width == 0:
         adder = np.random.normal(loc = 0, scale = np.max(abs(X)), size=X.shape)
     else :
-        adder = np.random.normal(loc=0, scale=np.max(abs(X)), size=X.shape)
-        #adder = np.random.multivariate_normal(np.zeros(nb_points), X@X.T, nb_indiv).T
+        adder = np.random.normal(loc=0, scale=width, size=X.shape)
     mutated = X + bin_factor*adder
     return mutated
 
@@ -35,7 +38,8 @@ def uniform_mutation(X, width, mutation_rate = 0):
     """
     random uniform mutation in the boundaries of [-width, width]
     :param X: indiv / pop
-    :return:s shrinked mutated X
+    :param width: boundary (float)
+    :return:s uniform mutated X
     """
     bound_min = - abs(width)
     bound_max = abs(width)
@@ -49,6 +53,13 @@ def uniform_mutation(X, width, mutation_rate = 0):
     return final_child
 
 def cmaes_mutation(X, cmaes_param, idx):
+    """
+    CMAES Evolutionary search strategy. Off-topic in Coursework 2
+    :param X: population
+    :param cmaes_param: dictionary of entries / cmaes parameters
+    :param idx: selected index of best individuals selected preferably with naive selection
+    :return:
+    """
     idx = idx.astype('int')
     n = X.shape[0]
     lamb = X.shape[1]
@@ -93,7 +104,16 @@ def cmaes_mutation(X, cmaes_param, idx):
     return cmaes_param["theta"]
 
 class Mutation:
+    """
+    Mutation class
+    """
     def __init__(self, name="shrink", initial_std_width = 1, rate = 0):
+        """
+        Mutation constuctor
+        :param name: 'shrink', 'cmaes' or 'uniform'
+        :param initial_std_width: width parameter for 'shrink' or 'uniform' param
+        :param rate:
+        """
         self.possible_mutations = {"shrink": shrink_mutation,
                                    "uniform": uniform_mutation,
                                    "cmaes" : cmaes_mutation,
@@ -110,6 +130,13 @@ class Mutation:
         self.initial_std_width = initial_std_width
 
     def apply(self, population, width = 1, idx = None):
+        """
+        Apply mutation
+        :param population: array (n, ...)
+        :param width: width param of shrink and uniform mutation
+        :param idx: selected index of pop
+        :return: mutated population
+        """
         if self.name == "cmaes":
             return cmaes_mutation(population, self.cmaes_param,  idx)
         else :

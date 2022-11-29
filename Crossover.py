@@ -145,9 +145,12 @@ def crossing(S, fitness, crossover = blx_alpha_crossover, child_nb=100, alpha=0.
     return sorted_A
 
 class Crossover:
+    """
+    Crossover class
+    """
     def __init__(self, child_nb, name="uniform", alpha = 0.1, rate = 1):
         """
-        Crossover class
+        Crossover constructor
         :param child_nb: number of children
         :param name: type of crossover. possible names : 'uniform', 'k-points', 'blx-alpha', 'sbx'
         :param alpha: hyperparameter of the crossover

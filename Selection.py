@@ -8,10 +8,11 @@ def wheel(A, fitness):
     :param A: All individuals
     :param fitness: fitness function
     :param func: evaluation function
-    :return: Selected individual according to roulette
+    :return: Selected individual according to roulette selection
     """
     nb_indiv = A.shape[1]
     fit_eval = fitness(A)
+    # making proba based on cumulative fitness
     inv_fit = 1/(abs(fit_eval)+ 1e-8)
     inv_fit /= np.sum(inv_fit)
     cumul_proba = np.cumsum(inv_fit)
@@ -101,9 +102,7 @@ def tournament_selection2(A,number, tournament_size=3, proba = 0.9, fitness = No
     for i in range(number):
         index = np.random.choice(pop_size, size = tournament_size, replace = False)
         tournament = pop[:, index]
-        #print(tournament)
         fit_eval = np.around(fitness(tournament),4)
-        #print(index, index.shape)
         dic_eval = {fit_eval[i] : index[i] for i in range(tournament_size)}
         tournament = tournament[:, fit_eval.argsort()]
         p_weights = np.array([proba*(1-proba)**i for i in range(tournament_size)])
@@ -111,15 +110,24 @@ def tournament_selection2(A,number, tournament_size=3, proba = 0.9, fitness = No
         selected_index = np.random.choice(tournament_size, p = p_weights)
         winner = tournament[:, selected_index]
         selected[:, i] = winner
-        #print(winner)
         fit_winner = round(fitness(winner[:,None])[0], 4)
-        #print(dic_eval)
         winner_index[i]= int(dic_eval[fit_winner])
     return selected, winner_index
 
 
 class Selection:
+    """
+    Selecton class
+    """
     def __init__(self, number, name="wheel", fitness_func=None,tournament_size = None, proba = None):
+        """
+
+        :param number:
+        :param name: 'wheel', 'naive', 'tournament', 'random'
+        :param fitness_func: the fitness function
+        :param tournament_size: int
+        :param proba: winner proba to be selected in tournament selection
+        """
         self.possible_selections = {"random" : random_selection,
                                    "naive":naive_selection,
                                    "roulette":wheel_selection,
@@ -128,7 +136,7 @@ class Selection:
             print("Warning, selection name is not recognized")
             print("Admissible selection names are : 'random', 'naive', 'roulette', 'tournament'")
             print("wheel selection is taken by default")
-            self.name = "wheel"
+            self.name = "roulette"
         else :
             self.name = name
         self.number = number
@@ -145,6 +153,11 @@ class Selection:
             self.function = self.possible_selections[self.name]
 
     def apply(self, population):
+        """
+        Apply selection
+        :param population: array (n, ...)
+        :return: Selected parents from population
+        """
         return self.function(population, self.number, self.fitness_func)
 
     def __str__(self):

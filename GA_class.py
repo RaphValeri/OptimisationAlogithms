@@ -143,10 +143,10 @@ class GA:
 
 if __name__ == "__main__":
     experience = GA(nb_genes=10, initial_pop_size=40, bound_min=-100, bound_max=100, fitness_name="rosenbrock", elites = 5, cull = 5)
-    experience.selection_init(number=8, name="tournament", tournament_size =10, proba = 0.9)
-    experience.crossover_init(child_nb = 40, name="k_points", alpha=2, rate = 0.8)
-    experience.mutation_init(name="shrink", width = 0, rate=0.1)
-    best, results, avg, std = experience.multiple_runs(nb_runs=10, nb_gen=3000, precision=6, printer=1)
+    experience.selection_init(number=8, name="tournament", tournament_size =5, proba = 0.9)
+    experience.crossover_init(child_nb = 40, name="k-points", alpha=1, rate = 0.8)
+    experience.mutation_init(name="shrink", width = 0, rate=0.05)
+    best, results, avg, std = experience.multiple_runs(nb_runs=10, nb_gen=1000, precision=6, printer=1)
 
     exp2 = GA(nb_genes=10, initial_pop_size=2000, bound_min=-100, bound_max=100, fitness_name="rosenbrock")
     exp2.selection_init(number=100, name="naive", tournament_size=10, proba=1)
